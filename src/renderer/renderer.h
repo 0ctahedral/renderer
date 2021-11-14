@@ -15,6 +15,13 @@ GLFWwindow* open_window();
 // run main loop
 int main_loop();
 
+/// context
+typedef struct vulkan_context {
+    VkInstance instance;
+} vulkan_context;
 
-// initialize the renderer
+/// initialize the renderer
 bool initialize(const char *name);
+
+/// shutdown the renderer
+void shutdown();
