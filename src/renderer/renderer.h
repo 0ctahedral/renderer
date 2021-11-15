@@ -18,6 +18,8 @@ int main_loop();
 /// context
 typedef struct vulkan_context {
     VkInstance instance;
+    VkAllocationCallbacks* allocator;
+    VkDebugUtilsMessengerEXT debug_messenger;
 } vulkan_context;
 
 /// initialize the renderer

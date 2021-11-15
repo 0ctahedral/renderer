@@ -1,11 +1,29 @@
 #include "renderer.h"
 #include "stdlib.h"
 #include "string.h"
+#include <vulkan/vulkan_core.h>
 
 static vulkan_context context;
 
 const uint32_t required_validation_layer_count = 1;
-const char* required_validation_layer_names[1] = {"VK_LAYER_KHRONOS_validation"};
+const char* required_validation_layer_names[] = {"VK_LAYER_KHRONOS_validation"};
+// TODO: do this dynamically, you dink
+const char* extensions[] = {
+    VK_EXT_DEBUG_UTILS_EXTENSION_NAME,
+    "VK_KHR_surface",
+    "VK_KHR_xcb_surface"
+};
+
+
+VKAPI_ATTR VkBool32 VKAPI_CALL vk_debug_callback(
+    VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
+    VkDebugUtilsMessageTypeFlagsEXT message_types,
+    const VkDebugUtilsMessengerCallbackDataEXT* callback_data,
+    void* user_data) {
+    // TODO: handle error types
+    fprintf(stderr, "vk_msg: %s\n", callback_data->pMessage);
+    return VK_FALSE;
+}
 
 GLFWwindow *open_window() {
   if (!glfwInit()) {
@@ -40,6 +58,8 @@ int main_loop() {
 }
 
 bool initialize(const char *name) {
+    // TODO: make an allocator
+    context.allocator = 0;
     // create app info
     VkApplicationInfo app_info = {VK_STRUCTURE_TYPE_APPLICATION_INFO};
     app_info.apiVersion = VK_API_VERSION_1_2;
@@ -51,9 +71,7 @@ bool initialize(const char *name) {
     VkInstanceCreateInfo create_info = {VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO};
     create_info.pApplicationInfo = &app_info;
 
-    uint32_t count;
-    const char** extensions = glfwGetRequiredInstanceExtensions(&count);
-
+    uint32_t count = 3;
     create_info.enabledExtensionCount = count;
     create_info.ppEnabledExtensionNames = extensions;
 
@@ -84,13 +102,34 @@ bool initialize(const char *name) {
     create_info.enabledLayerCount = required_validation_layer_count;
     create_info.ppEnabledLayerNames = required_validation_layer_names;
 
+    // create the instance
+    assertf(
+            vkCreateInstance(&create_info, context.allocator, &context.instance)
+            == VK_SUCCESS, "failed to create instance"
+    );
 
-    // TODO: create debugger
+    VkDebugUtilsMessengerCreateInfoEXT debug_info={VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT};
+    debug_info.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT
+                                |VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT
+                                |VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT;
 
+    debug_info.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT
+      | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT
+      |VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+    debug_info.pfnUserCallback = vk_debug_callback;
 
-    assertf(vkCreateInstance(&create_info, NULL, &context.instance) == VK_SUCCESS, "failed to create instance");
+    // get the function to set this bad boy up
+    // it's an extension so we need to look it up
+    PFN_vkCreateDebugUtilsMessengerEXT func =
+      (PFN_vkCreateDebugUtilsMessengerEXT)
+      vkGetInstanceProcAddr(context.instance, "vkCreateDebugUtilsMessengerEXT");
 
-    return false;
+    if (func == NULL) {
+      fprintf(stderr, "Could not find function 'vkCreateDebugUtilsMessengerEXT'");
+      return false;
+    }
+
+    return true;
 }
 
 void shutdown() {
