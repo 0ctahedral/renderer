@@ -1,7 +1,8 @@
+#include <vulkan/vulkan_core.h>
 #include "renderer.h"
 #include "stdlib.h"
 #include "string.h"
-#include <vulkan/vulkan_core.h>
+#include "device.h"
 
 static vulkan_context context;
 
@@ -133,5 +134,5 @@ bool initialize(const char *name) {
 }
 
 void shutdown() {
-
+    vkDestroyInstance(context.instance, context.allocator);
 }
