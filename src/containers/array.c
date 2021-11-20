@@ -2,10 +2,10 @@
 #include "stdlib.h"
 #include "string.h"
 
-void* _array_create(uint64_t len, uint64_t stride) {
+void* _array_create(u64 len, u64 stride) {
     // allocate an array
-    uint64_t total_size = (ARRAY_FIELDS_LENGTH * sizeof(uint64_t)) + (len * stride);
-    uint64_t* ptr = malloc(total_size);
+    u64 total_size = (ARRAY_FIELDS_LENGTH * sizeof(u64)) + (len * stride);
+    u64* ptr = malloc(total_size);
     ptr[ARRAY_CAPACITY] = len;
     ptr[ARRAY_LENGTH] = 0;
     ptr[ARRAY_STRIDE] = stride;
@@ -15,15 +15,15 @@ void* _array_create(uint64_t len, uint64_t stride) {
 }
 
 void* _array_push(void* array, const void* value_ptr) {
-    uint64_t len = *array_length(array);
-    uint64_t stride = *array_stride(array);
-    uint64_t cap = *array_capacity(array);
+    u64 len = *array_length(array);
+    u64 stride = *array_stride(array);
+    u64 cap = *array_capacity(array);
 
     if (len >= cap) {
         array = _array_resize(array);
     }
 
-    uint64_t addr = (uint64_t) array;
+    u64 addr = (u64) array;
     addr += (len * stride);
     memcpy((void*) addr, value_ptr, stride);
 
@@ -33,9 +33,9 @@ void* _array_push(void* array, const void* value_ptr) {
 }
 
 void* _array_resize(void* array) {
-    uint64_t len = *array_length(array);
-    uint64_t stride = *array_stride(array);
-    uint64_t new_cap = *array_capacity(array) * 2;
+    u64 len = *array_length(array);
+    u64 stride = *array_stride(array);
+    u64 new_cap = *array_capacity(array) * 2;
 
     // create new array
     void* ptr = _array_create(new_cap, len * stride);
@@ -49,20 +49,20 @@ void* _array_resize(void* array) {
 
 void _array_destroy(void* array) {
     // given a pointer to the data we need to backtrack to the header
-    uint64_t* ptr = (uint64_t*)array - ARRAY_FIELDS_LENGTH;
+    u64* ptr = (u64*)array - ARRAY_FIELDS_LENGTH;
     free(ptr);
 }
 
 
-uint64_t* array_length(void* array) {
-    uint64_t* ptr = (uint64_t*)array - ARRAY_FIELDS_LENGTH;
+u64* array_length(void* array) {
+    u64* ptr = (u64*)array - ARRAY_FIELDS_LENGTH;
     return &ptr[ARRAY_LENGTH];
 }
-uint64_t* array_capacity(void* array) {
-    uint64_t* ptr = (uint64_t*)array - ARRAY_FIELDS_LENGTH;
+u64* array_capacity(void* array) {
+    u64* ptr = (u64*)array - ARRAY_FIELDS_LENGTH;
     return &ptr[ARRAY_CAPACITY];
 }
-uint64_t* array_stride(void* array) {
-    uint64_t* ptr = (uint64_t*)array - ARRAY_FIELDS_LENGTH;
+u64* array_stride(void* array) {
+    u64* ptr = (u64*)array - ARRAY_FIELDS_LENGTH;
     return &ptr[ARRAY_STRIDE];
 }

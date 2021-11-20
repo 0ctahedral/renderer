@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include "../defines.h"
 
 // array type
 //      u64      u64       u64 
@@ -17,7 +18,7 @@ enum {
     ARRAY_FIELDS_LENGTH,
 };
 
-void* _array_create(uint64_t len, uint64_t stride);
+void* _array_create(u64 len, u64 stride);
 
 #define array_create(type) \
     _array_create(32, sizeof(type))
@@ -38,6 +39,6 @@ void* _array_push(void* array, const void* value_ptr);
 void* _array_resize(void* array);
 
 // helpers
-uint64_t* array_length(void* array);
-uint64_t* array_capacity(void* array);
-uint64_t* array_stride(void* array);
+u64* array_length(void* array);
+u64* array_capacity(void* array);
+u64* array_stride(void* array);
