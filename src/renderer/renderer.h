@@ -1,13 +1,14 @@
-#include <GLFW/glfw3.h>
-#include <vulkan/vulkan.h>
-#include <stdio.h>
-#include <stdbool.h>
-#include <assert.h>
-// this will be the renderer api
-//
+#pragma once
 
-// assersion
-#define assertf(A, M, ...) if(!(A)) {fprintf(stderr, "%s:%d: " M "\n", __FILE__, __LINE__,##__VA_ARGS__); assert(A); }
+#include "../defines.h"
+
+// only using this one because this should be the
+// only place this is included
+// subject to change
+#include <vulkan/vulkan.h>
+
+// forward declarations
+typedef struct GLFWwindow GLFWwindow;
 
 /// open a window
 GLFWwindow* open_window();
@@ -23,7 +24,7 @@ typedef struct vulkan_context {
 } vulkan_context;
 
 /// initialize the renderer
-bool initialize(const char *name);
+bool initialize_renderer(const char *name);
 
 /// shutdown the renderer
-void shutdown();
+void shutdown_renderer(void);

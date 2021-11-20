@@ -1,8 +1,10 @@
-#include <vulkan/vulkan_core.h>
+#include <GLFW/glfw3.h>
+#include <stdio.h>
+#include <string.h>
+
+#include "../asserts.h"
 #include "renderer.h"
-#include "stdlib.h"
-#include "string.h"
-#include "device.h"
+#include "../containers/array.h"
 
 static vulkan_context context;
 
@@ -42,7 +44,7 @@ int main_loop() {
     return 1;
   }
 
-  initialize("octal");
+  initialize_renderer("octal");
 
   while (!glfwWindowShouldClose(window)) {
     glfwSwapBuffers(window);
@@ -50,15 +52,15 @@ int main_loop() {
 
   }
 
+  shutdown_renderer();
+
   glfwDestroyWindow(window);
   glfwTerminate();
-
-  shutdown();
 
   return 0;
 }
 
-bool initialize(const char *name) {
+bool initialize_renderer(const char *name) {
     // TODO: make an allocator
     context.allocator = 0;
     // create app info
@@ -80,7 +82,11 @@ bool initialize(const char *name) {
     uint32_t available_layer_count = 0;
     vkEnumerateInstanceLayerProperties(&available_layer_count, 0);
     // TODO: make container type
-    VkLayerProperties* available_layers = malloc(sizeof(VkLayerProperties) * available_layer_count);
+
+    VkLayerProperties* available_layers = array_reserve(
+            available_layer_count,
+            VkLayerProperties
+    );
     vkEnumerateInstanceLayerProperties(&available_layer_count, available_layers);
     for (uint32_t i = 0; i < required_validation_layer_count; ++i) {
         bool found = false;
@@ -97,7 +103,7 @@ bool initialize(const char *name) {
         }
     }
     // done with the layers
-    free(available_layers);
+    array_destroy(available_layers);
 
     // add the layers names
     create_info.enabledLayerCount = required_validation_layer_count;
@@ -125,14 +131,25 @@ bool initialize(const char *name) {
       (PFN_vkCreateDebugUtilsMessengerEXT)
       vkGetInstanceProcAddr(context.instance, "vkCreateDebugUtilsMessengerEXT");
 
-    if (func == NULL) {
-      fprintf(stderr, "Could not find function 'vkCreateDebugUtilsMessengerEXT'");
-      return false;
-    }
+    assertf(func, "Could not find function 'vkCreateDebugUtilsMessengerEXT'");
+    assert(func(
+                context.instance,
+                &debug_info,
+                context.allocator,
+                &context.debug_messenger
+            ) == VK_SUCCESS);
 
     return true;
 }
 
-void shutdown() {
+void shutdown_renderer(void) {
+    PFN_vkDestroyDebugUtilsMessengerEXT func =
+        (PFN_vkDestroyDebugUtilsMessengerEXT)
+        vkGetInstanceProcAddr(context.instance, "vkDestroyDebugUtilsMessengerEXT");
+
+    assertf(func, "Could not find function 'vkDestroyDebugUtilsMessengerEXT'");
+
+    func(context.instance, context.debug_messenger, context.allocator);
+
     vkDestroyInstance(context.instance, context.allocator);
 }
