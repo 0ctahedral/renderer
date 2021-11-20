@@ -1,7 +1,36 @@
+#include <GLFW/glfw3.h>
 #include "renderer/renderer.h"
-#include "containers/array.h"
 #include <stdio.h>
 
 int main() {
-    return main_loop();
+  if (!glfwInit()) {
+    return 1;
+  }
+
+  GLFWwindow *window = glfwCreateWindow(640, 480, "My Title", NULL, NULL);
+
+  renderer_backend renderer = {};
+
+  renderer_backend_create(&renderer);
+
+  renderer.initialize(&renderer, "name");
+
+  if (!window) {
+    glfwTerminate();
+    return 1;
+  }
+
+
+  while (!glfwWindowShouldClose(window)) {
+    glfwSwapBuffers(window);
+    glfwPollEvents();
+
+  }
+
+  renderer.shutdown(&renderer);
+
+  renderer_backend_destroy(&renderer);
+
+  glfwDestroyWindow(window);
+  glfwTerminate();
 }

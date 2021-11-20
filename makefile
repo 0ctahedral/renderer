@@ -24,7 +24,7 @@ lib: scaffold $(OBJ_FILES)
 
 .PHONY: test
 test: lib
-	clang -lrenderer -rpath ./bin -L./bin $(INCLUDE_FLAGS) test.c -o $(BUILD_DIR)/test
+	clang -lrenderer -lglfw -rpath ./bin -L./bin $(INCLUDE_FLAGS) test.c -o $(BUILD_DIR)/test
 
 .PHONY: run
 run: test
