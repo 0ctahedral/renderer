@@ -26,7 +26,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL vk_debug_callback(
     return VK_FALSE;
 }
 
-bool vk_initialize(renderer_backend* backend, const char* name) {
+bool vk_initialize(GLFWwindow* window, const char* name) {
     // TODO: make an allocator
     context.allocator = 0;
     // create app info
@@ -110,7 +110,7 @@ bool vk_initialize(renderer_backend* backend, const char* name) {
     // TODO: make this not depend on glfw func
     assertf(glfwCreateWindowSurface(
             context.instance,
-            backend->window,
+            window,
             context.allocator,
             &context.surface
     ) == VK_SUCCESS, "could not create surface");
@@ -118,7 +118,7 @@ bool vk_initialize(renderer_backend* backend, const char* name) {
     return true;
 }
 
-void vk_shutdown(renderer_backend* backend) {
+void vk_shutdown() {
 
     vkDestroySurfaceKHR(context.instance, context.surface, context.allocator);
 

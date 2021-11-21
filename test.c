@@ -11,12 +11,12 @@ int main() {
   glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
   GLFWwindow *window = glfwCreateWindow(640, 480, "My Title", NULL, NULL);
 
-  renderer_backend renderer = {};
+  renderer_backend_i renderer = {};
 
   renderer_backend_create(&renderer);
   renderer.window = window;
 
-  renderer.initialize(&renderer, "name");
+  renderer.initialize(window, "name");
 
   if (!window) {
     glfwTerminate();
