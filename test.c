@@ -1,3 +1,4 @@
+#define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 #include "renderer/renderer.h"
 #include <stdio.h>
@@ -7,11 +8,13 @@ int main() {
     return 1;
   }
 
+  glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
   GLFWwindow *window = glfwCreateWindow(640, 480, "My Title", NULL, NULL);
 
   renderer_backend renderer = {};
 
   renderer_backend_create(&renderer);
+  renderer.window = window;
 
   renderer.initialize(&renderer, "name");
 

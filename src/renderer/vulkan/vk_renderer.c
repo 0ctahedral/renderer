@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <string.h>
-
 #include "asserts.h"
 #include "vk_renderer.h"
 #include "containers/array.h"
@@ -85,6 +84,7 @@ bool vk_initialize(renderer_backend* backend, const char* name) {
     VkDebugUtilsMessengerCreateInfoEXT debug_info={VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT};
     debug_info.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT
                                 |VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT
+                                |VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT
                                 |VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT;
 
     debug_info.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT
@@ -106,10 +106,22 @@ bool vk_initialize(renderer_backend* backend, const char* name) {
                 &context.debug_messenger
             ) == VK_SUCCESS);
 
+    // create a surface
+    // TODO: make this not depend on glfw func
+    assertf(glfwCreateWindowSurface(
+            context.instance,
+            backend->window,
+            context.allocator,
+            &context.surface
+    ) == VK_SUCCESS, "could not create surface");
+
     return true;
 }
 
 void vk_shutdown(renderer_backend* backend) {
+
+    vkDestroySurfaceKHR(context.instance, context.surface, context.allocator);
+
     PFN_vkDestroyDebugUtilsMessengerEXT func =
         (PFN_vkDestroyDebugUtilsMessengerEXT)
         vkGetInstanceProcAddr(context.instance, "vkDestroyDebugUtilsMessengerEXT");

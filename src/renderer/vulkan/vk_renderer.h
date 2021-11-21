@@ -1,12 +1,10 @@
 #pragma once
 
+#include <vulkan/vulkan.h>
+// TODO: move glfw outta here
+#include <GLFW/glfw3.h>
 #include "defines.h"
 #include "renderer/renderer_types.inl"
-
-// only using this one because this should be the
-// only place this is included
-// subject to change
-#include <vulkan/vulkan.h>
 
 // forward declarations
 typedef struct GLFWwindow GLFWwindow;
@@ -17,6 +15,9 @@ int main_loop();
 /// context
 typedef struct vulkan_context {
     VkInstance instance;
+
+    VkSurfaceKHR surface;
+
     VkAllocationCallbacks* allocator;
     VkDebugUtilsMessengerEXT debug_messenger;
 } vulkan_context;
