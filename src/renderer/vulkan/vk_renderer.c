@@ -2,6 +2,7 @@
 #include <string.h>
 #include "asserts.h"
 #include "vk_renderer.h"
+#include "vk_device.h"
 #include "containers/array.h"
 
 static vulkan_context context;
@@ -114,6 +115,8 @@ bool vk_initialize(GLFWwindow* window, const char* name) {
             context.allocator,
             &context.surface
     ) == VK_SUCCESS, "could not create surface");
+
+    assertf(vk_device_create(&context), "could not create device");
 
     return true;
 }

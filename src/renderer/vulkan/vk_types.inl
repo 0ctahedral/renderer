@@ -1,11 +1,24 @@
 #pragma once
 
+#include "asserts.h"
 #include <vulkan/vulkan.h>
 #include <GLFW/glfw3.h>
 /*
  * Types for use in the vulkan backend
  */
 
+#define VK_CHECK(expr)          \
+{                               \
+    assert(expr == VK_SUCCESS); \
+}
+
+/// Encapsulates the physical and logical device
+typedef struct vk_device {
+
+    VkPhysicalDevice physical_device;
+
+    VkDevice logical_device;
+}vk_device;
 
 
 /// static context for the vulkan renderer
@@ -17,6 +30,8 @@ typedef struct vulkan_context {
 
     /// Surface we are presenting on
     VkSurfaceKHR surface;
+
+    vk_device device;
 
     /// allocator, TODO: make an allocator
     VkAllocationCallbacks* allocator;
