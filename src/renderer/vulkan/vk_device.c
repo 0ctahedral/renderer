@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 #include "vk_device.h"
 #include "containers/array.h"
 
@@ -260,11 +261,63 @@ bool physical_devices_meets_requirements(
 
     }
 
+    // TODO: Free these bad boys in destroy_device
+    
+    if (
+        out_support_info->format_count < 1 ||
+        out_support_info->present_mode_count < 1
+    ) {
+        // free allocated stuff for insufficient device
+        if (out_support_info->formats)
+            array_destroy(out_support_info->formats);
+        if (out_support_info->present_modes)
+            array_destroy(out_support_info->present_modes);
+
+        fprintf(stdout, "swapchain support not present\n");
+        return false;
+    }
+
     fprintf(stdout, "# present modes: %d\n", out_support_info->present_mode_count);
 
-    // TODO: Free these bad boys
-
     // check if we have device extensions
+    if (reqs.device_ext_names) {
+        u32 avail_ext_count = 0;
+        VkExtensionProperties* avail_ext = 0;
+        VK_CHECK(vkEnumerateDeviceExtensionProperties(
+            device,
+            0,
+            &avail_ext_count,
+            0
+        ));
+        if (avail_ext_count != 0) {
+            avail_ext = array_reserve(avail_ext_count, VkExtensionProperties);
+            VK_CHECK(vkEnumerateDeviceExtensionProperties(
+                device,
+                0,
+                &avail_ext_count,
+                avail_ext
+            ));
+
+            // find our extensions
+            for (u32 i = 0; i < *array_length(reqs.device_ext_names); ++i) {
+                bool found = false;
+                for (u32 j = 0; j < avail_ext_count; ++j) {
+                    // is it the same?
+                    if (strcmp(reqs.device_ext_names[i], avail_ext[j].extensionName) == 0) {
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (!found) {
+                    fprintf(stderr, "could not find extension: %s\n",
+                        reqs.device_ext_names[i]);
+                    return false;
+                }
+            }
+            array_destroy(avail_ext);
+        }
+    }
 
     return true;
 }
