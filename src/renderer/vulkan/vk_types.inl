@@ -1,5 +1,6 @@
 #pragma once
 
+#include "defines.h"
 #include "asserts.h"
 #include <vulkan/vulkan.h>
 #include <GLFW/glfw3.h>
@@ -14,8 +15,21 @@
 
 /// Encapsulates the physical and logical device
 typedef struct vk_device {
-
+    // physdev and proerties
     VkPhysicalDevice physical_device;
+
+    VkPhysicalDeviceProperties properties;
+    VkPhysicalDeviceMemoryProperties memory;
+    VkPhysicalDeviceFeatures features;
+
+    i32 graphics_queue_idx;
+    i32 present_queue_idx;
+    i32 compute_queue_idx;
+    i32 transfer_queue_idx;
+
+    bool supports_device_local_host_visible;
+
+    // logical
 
     VkDevice logical_device;
 }vk_device;

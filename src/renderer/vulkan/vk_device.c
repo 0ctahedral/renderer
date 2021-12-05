@@ -40,11 +40,47 @@ typedef struct vk_swapchain_support_info {
 bool select_physical_device(vulkan_context* context);
 
 bool vk_device_create(vulkan_context* context) {
-    return select_physical_device(context);
+    if (!select_physical_device(context))
+        return false;
+
+    printf("gfx: %i, pres: %i, comp: %i, trans: %i \n",
+        context->device.graphics_queue_idx,
+        context->device.present_queue_idx,
+        context->device.compute_queue_idx,
+        context->device.transfer_queue_idx
+    );
+
+    // check if some of the queues share indices
+    bool present_shares_graphics_queue = (
+            context->device.graphics_queue_idx ==
+            context->device.present_queue_idx
+    );
+
+    bool transfer_shares_graphics_queue = (
+            context->device.graphics_queue_idx ==
+            context->device.transfer_queue_idx
+    );
+    u32 idx_count = 1;
+    if (!present_shares_graphics_queue)
+        idx_count++;
+    if (!transfer_shares_graphics_queue)
+        idx_count++;
+
+    u32 indices[32];
+    u32 index = 0;
+    indices[index++] = context->device.graphics_queue_idx;
+    if (!present_shares_graphics_queue)
+        indices[index++] = context->device.present_queue_idx;
+    if (!transfer_shares_graphics_queue)
+        indices[index++] = context->device.transfer_queue_idx;
+
+    // time to actually create the device
+
+    return true;
 }
 
 void vk_device_destroy(vulkan_context* context) {
-
+    context->device.physical_device = 0;
 }
 
 bool physical_devices_meets_requirements(
@@ -72,8 +108,7 @@ bool select_physical_device(vulkan_context* context) {
     }
 
     // allocate an array and fill it
-    VkPhysicalDevice* physical_devices =
-        array_reserve(physical_device_count, VkPhysicalDevice);
+    VkPhysicalDevice physical_devices[32];
     VK_CHECK(vkEnumeratePhysicalDevices(
                 context->instance,
                 &physical_device_count,
@@ -133,14 +168,28 @@ bool select_physical_device(vulkan_context* context) {
             &support_info
         );
 
-        if (!meets_requirements) {
+        if (meets_requirements) {
+            fprintf(stderr, "selected device %s\n", properties.deviceName);
+
+            context->device.physical_device = physical_devices[i];
+            context->device.graphics_queue_idx = queue_info.graphics;
+            context->device.present_queue_idx = queue_info.present;
+            context->device.transfer_queue_idx = queue_info.transfer;
+            context->device.compute_queue_idx = queue_info.compute;
+
+            context->device.properties = properties;
+            context->device.features = features;
+            context->device.memory = memory;
+
+            context->device.supports_device_local_host_visible = supports_device_local_host_visible;
+
+            break;
+        } else {
             fprintf(stderr, "device %d does not meet requirements", i);
         }
     }
 
-    array_destroy(physical_devices);
-
-    return true;
+    return context->device.physical_device != 0;
 }
 
 /// Returns if the device given meets requirements set
@@ -175,20 +224,25 @@ bool physical_devices_meets_requirements(
 
     VkQueueFamilyProperties queue_families[32];
     vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_count, queue_families);
-
+    u8 min_transfer_score = 255;
     for (u32 i = 0; i < queue_family_count; ++i) {
+        u8 cur_transfer_score = 0;
 
         if (queue_families[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
             out_queue_info->graphics = i;
-        }
-
-        if (queue_families[i].queueFlags & VK_QUEUE_TRANSFER_BIT) {
-            // TODO: make this try to get a dedicated transfer queue
-            out_queue_info->transfer = i;
+            ++cur_transfer_score;
         }
 
         if (queue_families[i].queueFlags & VK_QUEUE_COMPUTE_BIT) {
             out_queue_info->compute = i;
+            ++cur_transfer_score;
+        }
+
+        if (queue_families[i].queueFlags & VK_QUEUE_TRANSFER_BIT) {
+            if (cur_transfer_score <= min_transfer_score) {
+                min_transfer_score = cur_transfer_score;
+                out_queue_info->transfer = i;
+            }
         }
 
         VkBool32 present = VK_FALSE;
@@ -317,7 +371,8 @@ bool physical_devices_meets_requirements(
             }
             array_destroy(avail_ext);
         }
+        return true;
     }
 
-    return true;
+    return false;
 }
