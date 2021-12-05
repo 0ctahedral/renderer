@@ -272,6 +272,63 @@ bool select_physical_device(vulkan_context* context) {
     return context->device.physical_device != 0;
 }
 
+void vk_query_swapchain_support(
+    VkPhysicalDevice device,
+    VkSurfaceKHR surface,
+    vk_swapchain_support_info* out_support_info
+) {
+    // check if we have swapchain support
+    VK_CHECK(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(
+        device,
+        surface,
+        &out_support_info->capabilities
+    ));
+
+    VK_CHECK(vkGetPhysicalDeviceSurfaceFormatsKHR(
+        device,
+        surface,
+        &out_support_info->format_count,
+        0
+    ));
+
+    if (out_support_info->format_count != 0) {
+        if (!out_support_info->formats) {
+            out_support_info->formats = array_reserve(
+                out_support_info->format_count,
+                VkSurfaceFormatKHR);
+        }
+
+        VK_CHECK(vkGetPhysicalDeviceSurfaceFormatsKHR(
+            device,
+            surface,
+            &out_support_info->format_count,
+            out_support_info->formats));
+
+    }
+
+
+    VK_CHECK(vkGetPhysicalDeviceSurfacePresentModesKHR(
+        device,
+        surface,
+        &out_support_info->present_mode_count,
+        0));
+
+    if (out_support_info->present_mode_count != 0) {
+        if (!out_support_info->present_modes) {
+            out_support_info->present_modes = array_reserve(
+                out_support_info->present_mode_count,
+                VkPresentModeKHR);
+        }
+
+        VK_CHECK(vkGetPhysicalDeviceSurfacePresentModesKHR(
+            device,
+            surface,
+            &out_support_info->present_mode_count,
+            out_support_info->present_modes));
+
+    }
+}
+
 /// Returns if the device given meets requirements set
 /// in the requirements struct.
 /// also populates the queue info if possible
@@ -344,56 +401,7 @@ bool physical_devices_meets_requirements(
         return false;
     }
 
-    // check if we have swapchain support
-    VK_CHECK(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(
-        device,
-        surface,
-        &out_support_info->capabilities
-    ));
-
-    VK_CHECK(vkGetPhysicalDeviceSurfaceFormatsKHR(
-        device,
-        surface,
-        &out_support_info->format_count,
-        0
-    ));
-
-    if (out_support_info->format_count != 0) {
-        if (!out_support_info->formats) {
-            out_support_info->formats = array_reserve(
-                out_support_info->format_count,
-                VkSurfaceFormatKHR);
-        }
-
-        VK_CHECK(vkGetPhysicalDeviceSurfaceFormatsKHR(
-            device,
-            surface,
-            &out_support_info->format_count,
-            out_support_info->formats));
-
-    }
-
-
-    VK_CHECK(vkGetPhysicalDeviceSurfacePresentModesKHR(
-        device,
-        surface,
-        &out_support_info->present_mode_count,
-        0));
-
-    if (out_support_info->present_mode_count != 0) {
-        if (!out_support_info->present_modes) {
-            out_support_info->present_modes = array_reserve(
-                out_support_info->present_mode_count,
-                VkPresentModeKHR);
-        }
-
-        VK_CHECK(vkGetPhysicalDeviceSurfacePresentModesKHR(
-            device,
-            surface,
-            &out_support_info->present_mode_count,
-            out_support_info->present_modes));
-
-    }
+    vk_query_swapchain_support(device, surface, out_support_info);
 
     if (
         out_support_info->format_count < 1 ||
@@ -450,6 +458,36 @@ bool physical_devices_meets_requirements(
             array_destroy(avail_ext);
         }
         return true;
+    }
+
+    return false;
+}
+
+
+bool vk_detect_depth_format(vk_device* device) {
+    const u64 candidate_count = 3;
+    VkFormat candidates[3] = {
+        VK_FORMAT_D32_SFLOAT,
+        VK_FORMAT_D32_SFLOAT_S8_UINT,
+        VK_FORMAT_D24_UNORM_S8_UINT
+    };
+
+    u32 flags = VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT;
+    for (u64 i = 0; i < candidate_count; ++i) {
+        VkFormatProperties properties;
+        vkGetPhysicalDeviceFormatProperties(
+            device->physical_device,
+            candidates[i],
+            &properties
+        );
+
+        if ((properties.linearTilingFeatures & flags) == flags) {
+            device->depth_format = candidates[i];
+            return true;
+        } else if ((properties.optimalTilingFeatures & flags) == flags) {
+            device->depth_format = candidates[i];
+            return true;
+        }
     }
 
     return false;

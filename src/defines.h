@@ -59,3 +59,5 @@ STATIC_ASSERT(sizeof(f64) == 8, "Expected f64 to be 8 bytes.");
 #define API
 #endif
 #endif
+
+#define CLAMP(val, min, max) (val <= min) ? min : (val >= max) ? max : val

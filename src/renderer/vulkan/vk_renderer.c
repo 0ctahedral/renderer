@@ -3,6 +3,7 @@
 #include "asserts.h"
 #include "vk_renderer.h"
 #include "vk_device.h"
+#include "vk_swapchain.h"
 #include "containers/array.h"
 
 static vulkan_context context;
@@ -16,6 +17,7 @@ const char* extensions[] = {
     "VK_KHR_xcb_surface"
 };
 
+i32 find_memory_index(u32 type_filter, u32 property_flags);
 
 VKAPI_ATTR VkBool32 VKAPI_CALL vk_debug_callback(
     VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
@@ -27,7 +29,11 @@ VKAPI_ATTR VkBool32 VKAPI_CALL vk_debug_callback(
     return VK_FALSE;
 }
 
+
+
 bool vk_initialize(GLFWwindow* window, const char* name) {
+    context.find_memory_index = find_memory_index;
+
     // TODO: make an allocator
     context.allocator = 0;
     // create app info
@@ -118,10 +124,19 @@ bool vk_initialize(GLFWwindow* window, const char* name) {
 
     assertf(vk_device_create(&context), "could not create device");
 
+    vk_swapchain_create(
+        &context,
+        context.fb_width,
+        context.fb_height,
+        &context.swapchain
+    );
+
     return true;
 }
 
 void vk_shutdown() {
+
+    vk_swapchain_destroy(&context, &context.swapchain);
 
     vk_device_destroy(&context);
 
@@ -136,4 +151,19 @@ void vk_shutdown() {
     func(context.instance, context.debug_messenger, context.allocator);
 
     vkDestroyInstance(context.instance, context.allocator);
+}
+
+
+i32 find_memory_index(u32 type_filter, u32 property_flags) {
+    VkPhysicalDeviceMemoryProperties memory_properties;
+    vkGetPhysicalDeviceMemoryProperties(context.device.physical_device, &memory_properties);
+
+    for (u32 i = 0; i < memory_properties.memoryTypeCount; ++i) {
+        // Check each memory type to see if its bit is set to 1.
+        if (type_filter & (1 << i) && (memory_properties.memoryTypes[i].propertyFlags & property_flags) == property_flags) {
+            return i;
+        }
+    }
+
+    return -1;
 }

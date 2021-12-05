@@ -13,6 +13,14 @@
     assert(expr == VK_SUCCESS); \
 }
 
+typedef struct vk_image {
+    VkImage handle;
+    VkDeviceMemory memory;
+    VkImageView view;
+    u32 width;
+    u32 height;
+} vk_image;
+
 typedef struct vk_swapchain_support_info {
     VkSurfaceCapabilitiesKHR capabilities;
     u32 format_count;
@@ -31,6 +39,7 @@ typedef struct vk_device {
     VkPhysicalDeviceProperties properties;
     VkPhysicalDeviceMemoryProperties memory;
     VkPhysicalDeviceFeatures features;
+    VkFormat depth_format;
 
     i32 graphics_queue_idx;
     i32 present_queue_idx;
@@ -47,11 +56,25 @@ typedef struct vk_device {
     VkQueue compute_queue;
 }vk_device;
 
+// swapchain
+typedef struct vk_swapchain {
+    VkSurfaceFormatKHR img_format;
+    u8 max_frames;
+    VkSwapchainKHR handle;
+    u32 img_count;
+    VkImage* images;
+    VkImageView* views;
+
+    vk_image depth;
+} vk_swapchain;
 
 /// static context for the vulkan renderer
 /// this holds the instance and other vulkan types we
 /// need for opperation
 typedef struct vulkan_context {
+    // dims of framebuffer
+    u32 fb_width;
+    u32 fb_height;
     /// handle to our vulkan instance
     VkInstance instance;
 
@@ -67,4 +90,11 @@ typedef struct vulkan_context {
     /// that will log for us
     VkDebugUtilsMessengerEXT debug_messenger;
 
+    vk_swapchain swapchain;
+    u32 image_idx;
+    u32 current_frame;
+
+    bool recreating_swapchain;
+
+    i32 (*find_memory_index)(u32 type_filter, u32 property_flags);
 } vulkan_context;
