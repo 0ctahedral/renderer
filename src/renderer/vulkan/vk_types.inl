@@ -13,6 +13,14 @@
     assert(expr == VK_SUCCESS); \
 }
 
+typedef struct vk_swapchain_support_info {
+    VkSurfaceCapabilitiesKHR capabilities;
+    u32 format_count;
+    VkSurfaceFormatKHR* formats;
+    u32 present_mode_count;
+    VkPresentModeKHR* present_modes;
+} vk_swapchain_support_info;
+
 /// Encapsulates the physical and logical device
 typedef struct vk_device {
     // physdev and proerties
@@ -21,6 +29,8 @@ typedef struct vk_device {
     VkPhysicalDeviceProperties properties;
     VkPhysicalDeviceMemoryProperties memory;
     VkPhysicalDeviceFeatures features;
+
+    vk_swapchain_support_info swapchain_support;
 
     i32 graphics_queue_idx;
     i32 present_queue_idx;

@@ -29,14 +29,6 @@ typedef struct vk_physical_device_queue_family_info {
     u32 transfer;
 } vk_physical_device_queue_family_info;
 
-typedef struct vk_swapchain_support_info {
-    VkSurfaceCapabilitiesKHR capabilities;
-    u32 format_count;
-    VkSurfaceFormatKHR* formats;
-    u32 present_mode_count;
-    VkPresentModeKHR* present_modes;
-} vk_swapchain_support_info;
-
 bool select_physical_device(vulkan_context* context);
 
 bool vk_device_create(vulkan_context* context) {
@@ -81,6 +73,21 @@ bool vk_device_create(vulkan_context* context) {
 
 void vk_device_destroy(vulkan_context* context) {
     context->device.physical_device = 0;
+
+    if (context->device.swapchain_support.formats) {
+        array_destroy(context->device.swapchain_support.formats)
+        context->device.swapchain_support.format_count = 0;
+    }
+    if (context->device.swapchain_support.present_modes) {
+        array_destroy(context->device.swapchain_support.present_modes)
+        context->device.swapchain_support.present_mode_count = 0;
+    }
+    //TODO: zero this out
+    //context->device.swapchain_support.capabilities;
+    context->device.graphics_queue_idx = -1;
+    context->device.present_queue_idx = -1;
+    context->device.compute_queue_idx = -1;
+    context->device.transfer_queue_idx = -1;
 }
 
 bool physical_devices_meets_requirements(
@@ -165,7 +172,7 @@ bool select_physical_device(vulkan_context* context) {
             features,
             reqs,
             &queue_info,
-            &support_info
+            &context->device.swapchain_support
         );
 
         if (meets_requirements) {
@@ -315,8 +322,6 @@ bool physical_devices_meets_requirements(
 
     }
 
-    // TODO: Free these bad boys in destroy_device
-    
     if (
         out_support_info->format_count < 1 ||
         out_support_info->present_mode_count < 1
