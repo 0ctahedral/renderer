@@ -123,6 +123,8 @@ bool vk_initialize(GLFWwindow* window, const char* name) {
 
 void vk_shutdown() {
 
+    vk_device_destroy(&context);
+
     vkDestroySurfaceKHR(context.instance, context.surface, context.allocator);
 
     PFN_vkDestroyDebugUtilsMessengerEXT func =

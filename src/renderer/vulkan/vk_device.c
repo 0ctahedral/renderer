@@ -66,12 +66,53 @@ bool vk_device_create(vulkan_context* context) {
     if (!transfer_shares_graphics_queue)
         indices[index++] = context->device.transfer_queue_idx;
 
-    // time to actually create the device
+    // time to actually create logical the device
+    VkDeviceQueueCreateInfo queue_create_infos[32];
+    for (u32 i = 0; i < idx_count; ++i) {
+        queue_create_infos[i].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+        queue_create_infos[i].queueFamilyIndex = indices[i];
+        queue_create_infos[i].queueCount = 1;
+        // graphics needs two?
+        if (indices[i] == context->device.graphics_queue_idx)
+            queue_create_infos[i].queueCount = 2;
+
+
+        queue_create_infos[i].flags = 0;
+        queue_create_infos[i].pNext = 0;
+        f32 queue_priority = 1.0f;
+        queue_create_infos[i].pQueuePriorities = &queue_priority;
+    }
+
+    VkPhysicalDeviceFeatures device_features = {};
+    device_features.samplerAnisotropy = VK_TRUE;
+
+    VkDeviceCreateInfo device_create_info = {
+        .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
+        .queueCreateInfoCount = idx_count,
+        .pQueueCreateInfos = queue_create_infos,
+        .pEnabledFeatures = &device_features,
+        .enabledExtensionCount = 1
+    };
+    const char* extension_names = VK_KHR_SWAPCHAIN_EXTENSION_NAME;
+    device_create_info.ppEnabledExtensionNames = &extension_names;
+
+    VK_CHECK(vkCreateDevice(
+        context->device.physical_device,
+        &device_create_info,
+        context->allocator,
+        &context->device.logical_device
+    ));
 
     return true;
 }
 
 void vk_device_destroy(vulkan_context* context) {
+    if (context->device.logical_device) {
+        printf("destroying logical device\n");
+        vkDestroyDevice(context->device.logical_device, context->allocator);
+        context->device.logical_device = 0;
+    }
+
     context->device.physical_device = 0;
 
     if (context->device.swapchain_support.formats) {
