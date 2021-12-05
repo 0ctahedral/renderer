@@ -26,11 +26,11 @@ typedef struct vk_device {
     // physdev and proerties
     VkPhysicalDevice physical_device;
 
+    vk_swapchain_support_info swapchain_support;
+
     VkPhysicalDeviceProperties properties;
     VkPhysicalDeviceMemoryProperties memory;
     VkPhysicalDeviceFeatures features;
-
-    vk_swapchain_support_info swapchain_support;
 
     i32 graphics_queue_idx;
     i32 present_queue_idx;
@@ -40,8 +40,11 @@ typedef struct vk_device {
     bool supports_device_local_host_visible;
 
     // logical
-
     VkDevice logical_device;
+    VkQueue graphics_queue;
+    VkQueue present_queue;
+    VkQueue transfer_queue;
+    VkQueue compute_queue;
 }vk_device;
 
 

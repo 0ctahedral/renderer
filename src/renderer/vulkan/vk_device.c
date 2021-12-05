@@ -103,10 +103,42 @@ bool vk_device_create(vulkan_context* context) {
         &context->device.logical_device
     ));
 
+    // get dem queues
+    vkGetDeviceQueue(
+        context->device.logical_device,
+        context->device.graphics_queue_idx,
+        0,
+        &context->device.graphics_queue
+    );
+    vkGetDeviceQueue(
+        context->device.logical_device,
+        context->device.present_queue_idx,
+        0,
+        &context->device.present_queue
+    );
+    vkGetDeviceQueue(
+        context->device.logical_device,
+        context->device.transfer_queue_idx,
+        0,
+        &context->device.transfer_queue
+    );
+    vkGetDeviceQueue(
+        context->device.logical_device,
+        context->device.compute_queue_idx,
+        0,
+        &context->device.compute_queue
+    );
+
     return true;
 }
 
 void vk_device_destroy(vulkan_context* context) {
+
+    context->device.graphics_queue = 0;
+    context->device.present_queue = 0;
+    context->device.transfer_queue = 0;
+    context->device.compute_queue = 0;
+
     if (context->device.logical_device) {
         printf("destroying logical device\n");
         vkDestroyDevice(context->device.logical_device, context->allocator);
